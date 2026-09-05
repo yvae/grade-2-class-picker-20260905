@@ -1,0 +1,620 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>二年级3班随机点名</title>
+  <style>
+    :root {
+      --ink: #27272a;
+      --muted: #71717a;
+      --line: #e4e4e7;
+      --surface: #fafafa;
+      --red: #ef4444;
+      --red-dark: #dc2626;
+      --teal: #0f9f9a;
+      --yellow: #f7b817;
+      --radius: 8px;
+      font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    button { font: inherit; }
+
+    button:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 4px solid rgba(15, 159, 154, .3);
+      outline-offset: 3px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 92px minmax(0, 1fr);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 18px 40px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 52px;
+      height: 52px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius);
+      color: #fff;
+      background: var(--yellow);
+      box-shadow: 0 8px 20px rgba(247, 184, 23, .24);
+    }
+
+    .brand-mark svg { width: 29px; height: 29px; fill: currentColor; }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(27px, 3vw, 44px);
+      line-height: 1;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+
+    h1 strong { color: var(--red); }
+
+    .stats { display: flex; gap: 12px; }
+
+    .stat {
+      min-width: 136px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .stat svg { width: 24px; height: 24px; }
+    .stat strong { font-size: 29px; color: var(--teal); }
+    .stat:last-child strong, .stat:last-child svg { color: var(--red); }
+
+    .content {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 350px;
+    }
+
+    .picker {
+      position: relative;
+      min-height: 0;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 42%, #fff 0 38%, #fafafa 100%);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .stage {
+      min-height: 0;
+      display: grid;
+      place-content: center;
+      justify-items: center;
+      padding: 28px 36px 8px;
+      text-align: center;
+    }
+
+    .status {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      color: #9a6700;
+      font-size: clamp(18px, 2vw, 26px);
+      font-weight: 800;
+    }
+
+    .status::before,
+    .status::after {
+      content: "";
+      width: 22px;
+      height: 22px;
+      background: var(--yellow);
+      clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 94%, 50% 72%, 21% 94%, 32% 57%, 2% 35%, 39% 35%);
+      opacity: 0;
+      transform: scale(.6);
+      transition: .2s ease;
+    }
+
+    .picker.winner .status::before,
+    .picker.winner .status::after { opacity: 1; transform: scale(1); }
+
+    .name {
+      width: min(100%, 920px);
+      min-height: 1.25em;
+      display: grid;
+      place-items: center;
+      margin: 0;
+      color: var(--red);
+      font-size: clamp(74px, 12vw, 168px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: 0;
+      text-wrap: balance;
+      transition: transform .2s ease, color .2s ease;
+    }
+
+    .picker.rolling .name { color: var(--teal); transform: scale(.96); }
+    .picker.winner .name { animation: winner-pop .52s cubic-bezier(.2, .8, .2, 1); }
+
+    .controls {
+      position: relative;
+      z-index: 3;
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      padding: 12px 32px 34px;
+    }
+
+    .primary {
+      width: min(560px, 82vw);
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border: 0;
+      border-radius: var(--radius);
+      color: #fff;
+      background: var(--red);
+      box-shadow: 0 12px 26px rgba(239, 68, 68, .2);
+      font-size: clamp(23px, 2.4vw, 34px);
+      font-weight: 800;
+      cursor: pointer;
+      transition: background .16s ease, transform .16s ease;
+    }
+
+    .primary:hover { background: var(--red-dark); transform: translateY(-2px); }
+    .primary:active { transform: translateY(0); }
+    .primary:disabled { cursor: not-allowed; background: #a1a1aa; box-shadow: none; transform: none; }
+    .primary svg { width: 36px; height: 36px; fill: currentColor; }
+
+    .hint { color: var(--muted); font-size: 16px; }
+    kbd {
+      display: inline-block;
+      margin-right: 7px;
+      padding: 4px 9px;
+      border: 1px solid #d4d4d8;
+      border-bottom-width: 3px;
+      border-radius: 6px;
+      color: #52525b;
+      background: #fff;
+      font: 600 14px/1.2 inherit;
+    }
+
+    .history {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto minmax(0, 1fr) auto;
+      border-left: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .history-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 24px 24px 18px;
+      border-bottom: 3px solid var(--teal);
+    }
+
+    .history-head svg { width: 28px; height: 28px; color: var(--teal); }
+    .history h2 { margin: 0; font-size: 25px; letter-spacing: 0; }
+
+    .history-list {
+      margin: 0;
+      padding: 0 22px;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .history-list li {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      align-items: center;
+      min-height: 58px;
+      border-bottom: 1px solid var(--line);
+      font-size: 20px;
+    }
+
+    .history-list .index { color: var(--teal); font-weight: 800; }
+
+    .history-list .empty {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 1fr;
+      place-content: center;
+      gap: 8px;
+      padding: 28px;
+      color: #a1a1aa;
+      text-align: center;
+    }
+
+    .empty strong { color: #71717a; font-size: 18px; }
+
+    .history-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .secondary {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--teal);
+      border-radius: var(--radius);
+      color: var(--teal);
+      background: #fff;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .secondary.danger { border-color: var(--red); color: var(--red); }
+    .secondary:hover { background: #f0fdfa; }
+    .secondary.danger:hover { background: #fef2f2; }
+    .secondary:disabled { cursor: not-allowed; border-color: #d4d4d8; color: #a1a1aa; background: #fafafa; }
+    .secondary svg { width: 20px; height: 20px; }
+
+    .confetti { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+    .confetti i {
+      position: absolute;
+      top: 38%;
+      left: 50%;
+      width: 10px;
+      height: 18px;
+      opacity: 0;
+      background: var(--c);
+      transform: translate(-50%, -50%) rotate(var(--r));
+    }
+    .confetti.burst i { animation: confetti .8s ease-out forwards; }
+
+    dialog {
+      width: min(420px, calc(100vw - 32px));
+      padding: 0;
+      border: 0;
+      border-radius: var(--radius);
+      box-shadow: 0 24px 70px rgba(24, 24, 27, .25);
+    }
+    dialog::backdrop { background: rgba(24, 24, 27, .45); }
+    .dialog-body { padding: 28px; }
+    .dialog-body h2 { margin: 0 0 10px; font-size: 25px; }
+    .dialog-body p { margin: 0; color: var(--muted); line-height: 1.7; }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 28px 24px; }
+    .dialog-actions button { min-width: 90px; min-height: 42px; border-radius: 6px; cursor: pointer; font-weight: 700; }
+    .cancel { border: 1px solid var(--line); color: var(--ink); background: #fff; }
+    .confirm { border: 1px solid var(--red); color: #fff; background: var(--red); }
+
+    @keyframes winner-pop {
+      0% { opacity: .2; transform: scale(.82); }
+      55% { transform: scale(1.06); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes confetti {
+      0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--r)); }
+      100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) rotate(calc(var(--r) + 240deg)); }
+    }
+
+    @media (max-width: 760px) {
+      body { overflow: auto; }
+      .app { min-height: 100svh; grid-template-rows: auto 1fr; }
+      .topbar { align-items: flex-start; gap: 14px; padding: 16px; }
+      .brand { gap: 10px; }
+      .brand-mark { width: 40px; height: 40px; }
+      .brand-mark svg { width: 23px; height: 23px; }
+      h1 { font-size: clamp(23px, 7vw, 31px); }
+      .stats { gap: 6px; }
+      .stat { min-width: 68px; height: 44px; gap: 4px; font-size: 0; }
+      .stat svg { width: 18px; height: 18px; }
+      .stat strong { font-size: 22px; }
+      .content { display: block; }
+      .picker { min-height: 55svh; grid-template-rows: 1fr auto; border-bottom: 1px solid var(--line); }
+      .stage { padding: 30px 18px 6px; }
+      .status { margin-bottom: 8px; font-size: 18px; }
+      .name { font-size: clamp(58px, 18vw, 92px); }
+      .controls { padding: 8px 18px 26px; }
+      .primary { width: min(100%, 480px); min-height: 62px; font-size: 23px; }
+      .primary svg { width: 28px; height: 28px; }
+      .history { min-height: 360px; border-left: 0; }
+      .history-head { padding: 18px; }
+      .history-list { max-height: 300px; padding: 0 18px; }
+      .history-actions { position: sticky; bottom: 0; background: #fff; }
+    }
+
+    @media (max-width: 430px) {
+      .topbar { gap: 8px; padding: 12px 10px; }
+      .brand { gap: 7px; }
+      .brand-mark { width: 34px; height: 34px; }
+      .brand-mark svg { width: 20px; height: 20px; }
+      h1 { font-size: 23px; }
+      .stats { gap: 4px; }
+      .stat { min-width: 52px; height: 38px; padding: 0 6px; }
+      .stat svg { width: 15px; height: 15px; }
+      .stat strong { font-size: 19px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 2.6 2.77 5.62 6.2.9-4.49 4.38 1.06 6.17L12 16.75l-5.54 2.92 1.06-6.17-4.49-4.38 6.2-.9L12 2.6Z"/></svg>
+        </span>
+        <h1><strong>二年级3班</strong> 随机点名</h1>
+      </div>
+      <div class="stats" aria-label="点名进度">
+        <div class="stat" title="剩余人数">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>剩余</span><strong id="remaining">40</strong>
+        </div>
+        <div class="stat" title="已点人数">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.4-4-4 1.6-1.6 2.4 2.4 4.8-4.8 1.6 1.6-6.4 6.4Z"/></svg>
+          <span>已点</span><strong id="picked-count">0</strong>
+        </div>
+      </div>
+    </header>
+
+    <div class="content">
+      <section class="picker" id="picker" role="button" tabindex="0" aria-label="随机点名区域，按空格键开始或停止">
+        <div class="confetti" id="confetti" aria-hidden="true"></div>
+        <div class="stage">
+          <div class="status" id="status">准备好了吗？</div>
+          <p class="name" id="name">点击开始</p>
+        </div>
+        <div class="controls">
+          <button class="primary" id="toggle" type="button">
+            <svg id="toggle-icon" aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z"/></svg>
+            <span id="toggle-label">开始点名</span>
+          </button>
+          <span class="hint"><kbd>空格键</kbd>开始 / 停止</span>
+        </div>
+      </section>
+
+      <aside class="history" aria-label="本轮已点名单">
+        <div class="history-head">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5h10v16H5V5h4"/><path d="M9 3h6v4H9zM8 11h8M8 15h8"/></svg>
+          <h2>已点名单</h2>
+        </div>
+        <ol class="history-list" id="history-list"></ol>
+        <div class="history-actions">
+          <button class="secondary" id="undo" type="button" disabled>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 14-5-5 5-5"/><path d="M4 9h9a7 7 0 1 1 0 14h-2"/></svg>
+            撤销
+          </button>
+          <button class="secondary danger" id="reset" type="button" disabled>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0 2 5M20 4v7h-7"/></svg>
+            重置本轮
+          </button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <dialog id="reset-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-body">
+      <h2 id="dialog-title">重新开始本轮？</h2>
+      <p>已点名单将被清空，40 名同学会全部回到候选名单。</p>
+    </div>
+    <div class="dialog-actions">
+      <button class="cancel" id="cancel-reset" type="button">取消</button>
+      <button class="confirm" id="confirm-reset" type="button">确认重置</button>
+    </div>
+  </dialog>
+
+  <p id="announcement" class="sr-only" aria-live="polite"></p>
+
+  <script>
+    const STUDENTS = ["蔡博宇", "蔡和谦", "常己舟", "常可馨", "崔语桐", "杜铂瑜", "冯又年", "盖洛伊", "高晟祺", "管张佑", "韩芷诺", "来鸿毅", "李星祎", "李泽烁", "林诗婕", "刘方奕", "刘羽辰", "马珹", "马洢曈", "聂嘉彦", "欧阳依伊", "任悦希", "石亦奇", "田宇洋", "王惠仪", "王启", "王思涵", "王悠米", "徐唯清", "杨清语", "杨姗颖", "杨子宁", "殷子晴", "张桓语", "张知予", "赵昱昊", "周敬雅", "周訾伊", "朱济枫", "朱玉琳"];
+
+    const picker = document.querySelector("#picker");
+    const nameEl = document.querySelector("#name");
+    const statusEl = document.querySelector("#status");
+    const toggle = document.querySelector("#toggle");
+    const toggleLabel = document.querySelector("#toggle-label");
+    const toggleIcon = document.querySelector("#toggle-icon");
+    const remainingEl = document.querySelector("#remaining");
+    const pickedCountEl = document.querySelector("#picked-count");
+    const historyList = document.querySelector("#history-list");
+    const undoButton = document.querySelector("#undo");
+    const resetButton = document.querySelector("#reset");
+    const resetDialog = document.querySelector("#reset-dialog");
+    const confetti = document.querySelector("#confetti");
+    const announcement = document.querySelector("#announcement");
+
+    let remaining = [...STUDENTS];
+    let picked = [];
+    let rolling = false;
+    let rollTimer = 0;
+
+    function secureRandomIndex(length) {
+      if (!globalThis.crypto?.getRandomValues) return Math.floor(Math.random() * length);
+      const range = 0x100000000;
+      const limit = range - (range % length);
+      const value = new Uint32Array(1);
+      do crypto.getRandomValues(value); while (value[0] >= limit);
+      return value[0] % length;
+    }
+
+    function previewName() {
+      nameEl.textContent = remaining[secureRandomIndex(remaining.length)];
+    }
+
+    function setButton(mode) {
+      const stopped = mode !== "stop";
+      toggleLabel.textContent = mode === "stop" ? "停止点名" : mode === "continue" ? "继续点名" : mode === "done" ? "本轮已完成" : "开始点名";
+      toggleIcon.innerHTML = mode === "stop"
+        ? '<path d="M7 6h4v12H7zM13 6h4v12h-4z"/>'
+        : '<path d="M8 5v14l11-7L8 5Z"/>';
+      toggle.disabled = mode === "done";
+      toggle.setAttribute("aria-pressed", String(!stopped));
+    }
+
+    function render() {
+      remainingEl.textContent = remaining.length;
+      pickedCountEl.textContent = picked.length;
+      undoButton.disabled = rolling || picked.length === 0;
+      resetButton.disabled = rolling || picked.length === 0;
+
+      historyList.replaceChildren();
+      if (picked.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.innerHTML = "<strong>还没有点名</strong><span>第一位幸运同学会出现在这里</span>";
+        historyList.append(empty);
+      } else {
+        picked.forEach((student, index) => {
+          const item = document.createElement("li");
+          item.innerHTML = `<span class="index">${index + 1}</span><span>${student}</span>`;
+          historyList.append(item);
+        });
+        historyList.lastElementChild?.scrollIntoView({ block: "nearest" });
+      }
+    }
+
+    function startRolling() {
+      if (rolling || remaining.length === 0) return;
+      rolling = true;
+      picker.classList.remove("winner");
+      picker.classList.add("rolling");
+      statusEl.textContent = "名字正在跳动…";
+      setButton("stop");
+      render();
+      previewName();
+      rollTimer = window.setInterval(previewName, 65);
+    }
+
+    function stopRolling() {
+      if (!rolling) return;
+      rolling = false;
+      window.clearInterval(rollTimer);
+      const index = secureRandomIndex(remaining.length);
+      const winner = remaining.splice(index, 1)[0];
+      picked.push(winner);
+      nameEl.textContent = winner;
+      statusEl.textContent = "本轮幸运同学";
+      picker.classList.remove("rolling");
+      picker.classList.add("winner");
+      setButton(remaining.length ? "continue" : "done");
+      render();
+      celebrate();
+      announcement.textContent = `抽中 ${winner}，本轮还剩 ${remaining.length} 人`;
+    }
+
+    function toggleRolling() {
+      if (rolling) stopRolling(); else startRolling();
+    }
+
+    function celebrate() {
+      confetti.replaceChildren();
+      const colors = ["#ef4444", "#f7b817", "#0f9f9a", "#60a5fa"];
+      for (let i = 0; i < 20; i += 1) {
+        const piece = document.createElement("i");
+        const angle = (Math.PI * 2 * i) / 20;
+        const distance = 150 + Math.random() * 260;
+        piece.style.cssText = `--c:${colors[i % colors.length]};--r:${i * 31}deg;--x:${Math.cos(angle) * distance}px;--y:${Math.sin(angle) * distance}px`;
+        confetti.append(piece);
+      }
+      confetti.classList.remove("burst");
+      requestAnimationFrame(() => confetti.classList.add("burst"));
+    }
+
+    function undoLast() {
+      if (rolling || picked.length === 0) return;
+      const restored = picked.pop();
+      remaining.push(restored);
+      picker.classList.remove("winner");
+      nameEl.textContent = "点击开始";
+      statusEl.textContent = "已撤销上一次点名";
+      setButton(picked.length ? "continue" : "start");
+      render();
+      announcement.textContent = `已撤销 ${restored}`;
+    }
+
+    function resetRound() {
+      remaining = [...STUDENTS];
+      picked = [];
+      picker.classList.remove("winner", "rolling");
+      nameEl.textContent = "点击开始";
+      statusEl.textContent = "准备好了吗？";
+      setButton("start");
+      render();
+      resetDialog.close();
+      announcement.textContent = "本轮已重置";
+    }
+
+    toggle.addEventListener("click", event => { event.stopPropagation(); toggleRolling(); });
+    picker.addEventListener("click", event => { if (!event.target.closest("button")) toggleRolling(); });
+    picker.addEventListener("keydown", event => {
+      if ((event.key === "Enter" || event.key === " ") && event.target === picker) {
+        event.preventDefault();
+        toggleRolling();
+      }
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === " " && !resetDialog.open && !event.repeat && event.target === document.body) {
+        event.preventDefault();
+        toggleRolling();
+      }
+    });
+    undoButton.addEventListener("click", undoLast);
+    resetButton.addEventListener("click", () => resetDialog.showModal());
+    document.querySelector("#cancel-reset").addEventListener("click", () => resetDialog.close());
+    document.querySelector("#confirm-reset").addEventListener("click", resetRound);
+    resetDialog.addEventListener("click", event => { if (event.target === resetDialog) resetDialog.close(); });
+
+    const srStyle = document.createElement("style");
+    srStyle.textContent = ".sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}";
+    document.head.append(srStyle);
+    render();
+  </script>
+</body>
+</html>
